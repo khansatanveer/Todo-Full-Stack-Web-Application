@@ -1,0 +1,203 @@
+# Authentication API Contracts
+
+## Authentication Endpoints
+
+### POST /api/auth/register
+**Description**: Register a new user account
+
+#### Request
+```
+POST /api/auth/register
+Content-Type: application/json
+```
+
+**Request Body**:
+```json
+{
+  "email": "string (valid email format)",
+  "password": "string (min 8 characters)"
+}
+```
+
+**Success Response (200)**:
+```json
+{
+  "success": true,
+  "user": {
+    "id": "string (user UUID)",
+    "email": "string",
+    "createdAt": "ISO 8601 datetime"
+  },
+  "token": "string (JWT token)"
+}
+```
+
+**Error Responses**:
+- 400: Invalid request format
+- 409: Email already exists
+
+---
+
+### POST /api/auth/login
+**Description**: Authenticate user and return JWT token
+
+#### Request
+```
+POST /api/auth/login
+Content-Type: application/json
+```
+
+**Request Body**:
+```json
+{
+  "email": "string (valid email format)",
+  "password": "string"
+}
+```
+
+**Success Response (200)**:
+```json
+{
+  "success": true,
+  "user": {
+    "id": "string (user UUID)",
+    "email": "string"
+  },
+  "token": "string (JWT token)"
+}
+```
+
+**Error Responses**:
+- 400: Invalid request format
+- 401: Invalid credentials
+
+---
+
+### POST /api/auth/logout
+**Description**: Invalidate current session
+
+#### Request
+```
+POST /api/auth/logout
+Authorization: Bearer {valid JWT token}
+```
+
+**Success Response (200)**:
+```json
+{
+  "success": true,
+  "message": "Logged out successfully"
+}
+```
+
+**Error Responses**:
+- 401: Invalid or expired token
+
+---
+
+## Protected API Endpoints
+
+### GET /api/protected-resource
+**Description**: Access protected resource requiring authentication
+
+#### Request
+```
+GET /api/protected-resource
+Authorization: Bearer {valid JWT token}
+```
+
+**Success Response (200)**:
+```json
+{
+  "data": "resource data specific to authenticated user"
+}
+```
+
+**Error Responses**:
+- 401: Invalid or expired token
+- 403: Insufficient permissions (user cannot access this resource)
+
+---
+
+### PUT /api/protected-resource/{resourceId}
+**Description**: Modify protected resource requiring authentication and ownership
+
+#### Request
+```
+PUT /api/protected-resource/{resourceId}
+Authorization: Bearer {valid JWT token}
+Content-Type: application/json
+```
+
+**Path Parameter**:
+- `resourceId`: string (ID of the resource to update)
+
+**Request Body**:
+```json
+{
+  "field1": "value1",
+  "field2": "value2"
+}
+```
+
+**Success Response (200)**:
+```json
+{
+  "data": "updated resource data"
+}
+```
+
+**Error Responses**:
+- 401: Invalid or expired token
+- 403: User does not own this resource
+- 404: Resource not found
+
+---
+
+## Error Response Format
+
+All error responses follow this structure:
+
+```json
+{
+  "error": "string (error code)",
+  "message": "string (human-readable message)",
+  "timestamp": "ISO 8601 datetime"
+}
+```
+
+### Common Error Codes
+- `INVALID_TOKEN`: Provided JWT token is invalid or malformed
+- `EXPIRED_TOKEN`: Provided JWT token has expired
+- `UNAUTHORIZED_ACCESS`: User lacks permission for requested resource
+- `MISSING_AUTH_HEADER`: Authorization header not provided
+- `INVALID_CREDENTIALS`: Provided login credentials are incorrect
+- `VALIDATION_ERROR`: Request body validation failed
+
+---
+
+## JWT Claims Structure
+
+Valid JWT tokens contain these claims:
+
+```json
+{
+  "header": {
+    "alg": "HS256",
+    "typ": "JWT"
+  },
+  "payload": {
+    "sub": "user UUID (subject)",
+    "user_id": "user UUID (for convenience)",
+    "email": "user email",
+    "exp": 1234567890,
+    "iat": 1234567890
+  }
+}
+```
+
+### Token Validation Requirements
+- Signature must be valid using BETTER_AUTH_SECRET
+- Current time must be before `exp` (expiration time)
+- `sub` and `user_id` claims must be present
+- `user_id` must correspond to an existing user

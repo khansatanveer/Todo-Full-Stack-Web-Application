@@ -1,0 +1,344 @@
+# API Contracts for Frontend Application & Integration
+
+## Authentication Endpoints (Handled by Better Auth)
+
+### POST /api/auth/register
+**Description**: Register a new user account
+
+#### Request
+```
+POST /api/auth/register
+Content-Type: application/json
+```
+
+**Request Body**:
+```json
+{
+  "email": "string (valid email format)",
+  "password": "string (min 8 characters)",
+  "name": "string (optional)"
+}
+```
+
+**Success Response (200)**:
+```json
+{
+  "user": {
+    "id": "string (user UUID)",
+    "email": "string",
+    "name": "string"
+  },
+  "token": "string (JWT token)"
+}
+```
+
+**Error Responses**:
+- 400: Invalid request format
+- 409: Email already exists
+
+---
+
+### POST /api/auth/login
+**Description**: Authenticate user and return JWT token
+
+#### Request
+```
+POST /api/auth/login
+Content-Type: application/json
+```
+
+**Request Body**:
+```json
+{
+  "email": "string (valid email format)",
+  "password": "string"
+}
+```
+
+**Success Response (200)**:
+```json
+{
+  "user": {
+    "id": "string (user UUID)",
+    "email": "string",
+    "name": "string"
+  },
+  "token": "string (JWT token)"
+}
+```
+
+**Error Responses**:
+- 400: Invalid request format
+- 401: Invalid credentials
+
+---
+
+### POST /api/auth/logout
+**Description**: Invalidate current session
+
+#### Request
+```
+POST /api/auth/logout
+Authorization: Bearer {valid JWT token}
+```
+
+**Success Response (200)**:
+```json
+{
+  "success": true,
+  "message": "Logged out successfully"
+}
+```
+
+**Error Responses**:
+- 401: Invalid or expired token
+
+---
+
+## Task Management API Endpoints (Integrating with Spec 1-backend-task-api)
+
+### GET /api/{user_id}/tasks
+**Description**: Retrieve all tasks for a specific user
+
+#### Request
+```
+GET /api/{user_id}/tasks
+Authorization: Bearer {valid JWT token}
+```
+
+**Path Parameters**:
+- `user_id`: string (user identifier from JWT must match this)
+
+**Success Response (200)**:
+```json
+{
+  "tasks": [
+    {
+      "id": "string (UUID)",
+      "title": "string",
+      "description": "string (optional)",
+      "completed": "boolean",
+      "user_id": "string",
+      "created_at": "ISO 8601 datetime",
+      "updated_at": "ISO 8601 datetime"
+    }
+  ],
+  "total_count": "integer",
+  "completed_count": "integer",
+  "incomplete_count": "integer"
+}
+```
+
+**Error Responses**:
+- 401: Missing or invalid JWT token
+- 403: JWT user_id does not match path user_id
+- 404: User not found
+
+---
+
+### POST /api/{user_id}/tasks
+**Description**: Create a new task for a specific user
+
+#### Request
+```
+POST /api/{user_id}/tasks
+Authorization: Bearer {valid JWT token}
+Content-Type: application/json
+```
+
+**Path Parameters**:
+- `user_id`: string (user identifier from JWT must match this)
+
+**Request Body**:
+```json
+{
+  "title": "string (required)",
+  "description": "string (optional)"
+}
+```
+
+**Success Response (201)**:
+```json
+{
+  "id": "string (UUID)",
+  "title": "string",
+  "description": "string (optional)",
+  "completed": "boolean (false by default)",
+  "user_id": "string",
+  "created_at": "ISO 8601 datetime",
+  "updated_at": "ISO 8601 datetime"
+}
+```
+
+**Error Responses**:
+- 400: Invalid request body (missing title, etc.)
+- 401: Missing or invalid JWT token
+- 403: JWT user_id does not match path user_id
+
+---
+
+### GET /api/{user_id}/tasks/{id}
+**Description**: Retrieve a specific task by ID for a user
+
+#### Request
+```
+GET /api/{user_id}/tasks/{id}
+Authorization: Bearer {valid JWT token}
+```
+
+**Path Parameters**:
+- `user_id`: string (user identifier from JWT must match this)
+- `id`: string (task identifier)
+
+**Success Response (200)**:
+```json
+{
+  "id": "string (UUID)",
+  "title": "string",
+  "description": "string (optional)",
+  "completed": "boolean",
+  "user_id": "string",
+  "created_at": "ISO 8601 datetime",
+  "updated_at": "ISO 8601 datetime"
+}
+```
+
+**Error Responses**:
+- 401: Missing or invalid JWT token
+- 403: JWT user_id does not match path user_id
+- 404: Task not found for this user
+
+---
+
+### PUT /api/{user_id}/tasks/{id}
+**Description**: Update a specific task for a user
+
+#### Request
+```
+PUT /api/{user_id}/tasks/{id}
+Authorization: Bearer {valid JWT token}
+Content-Type: application/json
+```
+
+**Path Parameters**:
+- `user_id`: string (user identifier from JWT must match this)
+- `id`: string (task identifier)
+
+**Request Body**:
+```json
+{
+  "title": "string (optional)",
+  "description": "string (optional)",
+  "completed": "boolean (optional)"
+}
+```
+
+**Success Response (200)**:
+```json
+{
+  "id": "string (UUID)",
+  "title": "string",
+  "description": "string (optional)",
+  "completed": "boolean",
+  "user_id": "string",
+  "created_at": "ISO 8601 datetime",
+  "updated_at": "ISO 8601 datetime"
+}
+```
+
+**Error Responses**:
+- 400: Invalid request body
+- 401: Missing or invalid JWT token
+- 403: JWT user_id does not match path user_id
+- 404: Task not found for this user
+
+---
+
+### DELETE /api/{user_id}/tasks/{id}
+**Description**: Delete a specific task for a user
+
+#### Request
+```
+DELETE /api/{user_id}/tasks/{id}
+Authorization: Bearer {valid JWT token}
+```
+
+**Path Parameters**:
+- `user_id`: string (user identifier from JWT must match this)
+- `id`: string (task identifier)
+
+**Success Response (204)**:
+```json
+{}
+```
+
+**Error Responses**:
+- 401: Missing or invalid JWT token
+- 403: JWT user_id does not match path user_id
+- 404: Task not found for this user
+
+---
+
+### PATCH /api/{user_id}/tasks/{id}/complete
+**Description**: Toggle the completion status of a specific task for a user
+
+#### Request
+```
+PATCH /api/{user_id}/tasks/{id}/complete
+Authorization: Bearer {valid JWT token}
+Content-Type: application/json
+```
+
+**Path Parameters**:
+- `user_id`: string (user identifier from JWT must match this)
+- `id`: string (task identifier)
+
+**Request Body**: Empty
+
+**Success Response (200)**:
+```json
+{
+  "id": "string (UUID)",
+  "title": "string",
+  "description": "string (optional)",
+  "completed": "boolean (toggled)",
+  "user_id": "string",
+  "created_at": "ISO 8601 datetime",
+  "updated_at": "ISO 8601 datetime"
+}
+```
+
+**Error Responses**:
+- 401: Missing or invalid JWT token
+- 403: JWT user_id does not match path user_id
+- 404: Task not found for this user
+
+---
+
+## Error Response Format
+
+All error responses follow this structure:
+
+```json
+{
+  "error": "string (error code)",
+  "message": "string (human-readable message)",
+  "timestamp": "ISO 8601 datetime"
+}
+```
+
+### Common Error Codes
+- `UNAUTHORIZED_ACCESS`: Missing or invalid JWT token
+- `FORBIDDEN_ACCESS`: JWT user_id does not match path user_id
+- `RESOURCE_NOT_FOUND`: Requested task does not exist for the user
+- `VALIDATION_ERROR`: Request body validation failed
+- `INTERNAL_SERVER_ERROR`: Unexpected server error occurred
+
+---
+
+## Authentication Requirements
+
+All task endpoints require:
+- Valid JWT token in Authorization header
+- JWT user_id must match the user_id in the path
+- Token must not be expired or malformed

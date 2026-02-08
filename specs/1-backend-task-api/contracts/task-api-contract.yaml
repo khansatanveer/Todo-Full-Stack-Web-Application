@@ -1,0 +1,287 @@
+# API Contract: Task Management API
+
+## Base Path
+```
+http://localhost:8000/api/{user_id}
+```
+
+## Authentication
+All endpoints require a valid JWT token in the Authorization header:
+```
+Authorization: Bearer {jwt_token}
+```
+
+## Common Response Formats
+
+### Success Response
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "Operation completed successfully"
+}
+```
+
+### Error Response
+```json
+{
+  "success": false,
+  "error": "ERROR_CODE",
+  "message": "Human-readable error message"
+}
+```
+
+## Endpoints
+
+### GET /api/{user_id}/tasks
+**Description**: Retrieve all tasks for a specific user
+
+#### Request
+```
+GET /api/{user_id}/tasks
+Authorization: Bearer {valid_jwt_token}
+```
+
+#### Path Parameters
+- `user_id` (string, required): ID of the user whose tasks to retrieve
+
+#### Query Parameters
+- `limit` (integer, optional): Maximum number of tasks to return
+- `offset` (integer, optional): Number of tasks to skip (for pagination)
+
+#### Response (200 OK)
+```json
+{
+  "tasks": [
+    {
+      "id": "uuid-string",
+      "title": "Task title",
+      "description": "Optional task description",
+      "completed": false,
+      "user_id": "user-id-string",
+      "created_at": "2026-01-28T12:34:56.789Z",
+      "updated_at": "2026-01-28T12:34:56.789Z"
+    }
+  ],
+  "total_count": 15,
+  "completed_count": 5,
+  "incomplete_count": 10
+}
+```
+
+#### Error Responses
+- 401: Unauthorized - Invalid or missing JWT token
+- 403: Forbidden - User ID in JWT doesn't match path parameter
+- 404: Not Found - User doesn't exist
+
+---
+
+### POST /api/{user_id}/tasks
+**Description**: Create a new task for a specific user
+
+#### Request
+```
+POST /api/{user_id}/tasks
+Authorization: Bearer {valid_jwt_token}
+Content-Type: application/json
+```
+
+#### Path Parameters
+- `user_id` (string, required): ID of the user to create task for
+
+#### Request Body
+```json
+{
+  "title": "Task title",
+  "description": "Optional task description"
+}
+```
+
+#### Response (201 Created)
+```json
+{
+  "id": "uuid-string",
+  "title": "Task title",
+  "description": "Optional task description",
+  "completed": false,
+  "user_id": "user-id-string",
+  "created_at": "2026-01-28T12:34:56.789Z",
+  "updated_at": "2026-01-28T12:34:56.789Z"
+}
+```
+
+#### Error Responses
+- 400: Bad Request - Invalid request body (missing title, etc.)
+- 401: Unauthorized - Invalid or missing JWT token
+- 403: Forbidden - User ID in JWT doesn't match path parameter
+- 422: Unprocessable Entity - Validation error
+
+---
+
+### GET /api/{user_id}/tasks/{id}
+**Description**: Retrieve a specific task for a user
+
+#### Request
+```
+GET /api/{user_id}/tasks/{id}
+Authorization: Bearer {valid_jwt_token}
+```
+
+#### Path Parameters
+- `user_id` (string, required): ID of the user
+- `id` (string, required): ID of the task to retrieve
+
+#### Response (200 OK)
+```json
+{
+  "id": "uuid-string",
+  "title": "Task title",
+  "description": "Optional task description",
+  "completed": false,
+  "user_id": "user-id-string",
+  "created_at": "2026-01-28T12:34:56.789Z",
+  "updated_at": "2026-01-28T12:34:56.789Z"
+}
+```
+
+#### Error Responses
+- 401: Unauthorized - Invalid or missing JWT token
+- 403: Forbidden - User ID in JWT doesn't match path parameter
+- 404: Not Found - Task doesn't exist for this user
+
+---
+
+### PUT /api/{user_id}/tasks/{id}
+**Description**: Update a specific task for a user
+
+#### Request
+```
+PUT /api/{user_id}/tasks/{id}
+Authorization: Bearer {valid_jwt_token}
+Content-Type: application/json
+```
+
+#### Path Parameters
+- `user_id` (string, required): ID of the user
+- `id` (string, required): ID of the task to update
+
+#### Request Body
+```json
+{
+  "title": "Updated task title",
+  "description": "Updated task description",
+  "completed": true
+}
+```
+
+#### Response (200 OK)
+```json
+{
+  "id": "uuid-string",
+  "title": "Updated task title",
+  "description": "Updated task description",
+  "completed": true,
+  "user_id": "user-id-string",
+  "created_at": "2026-01-28T12:34:56.789Z",
+  "updated_at": "2026-01-28T15:42:10.123Z"
+}
+```
+
+#### Error Responses
+- 400: Bad Request - Invalid request body
+- 401: Unauthorized - Invalid or missing JWT token
+- 403: Forbidden - User ID in JWT doesn't match path parameter
+- 404: Not Found - Task doesn't exist for this user
+
+---
+
+### DELETE /api/{user_id}/tasks/{id}
+**Description**: Delete a specific task for a user
+
+#### Request
+```
+DELETE /api/{user_id}/tasks/{id}
+Authorization: Bearer {valid_jwt_token}
+```
+
+#### Path Parameters
+- `user_id` (string, required): ID of the user
+- `id` (string, required): ID of the task to delete
+
+#### Response (204 No Content)
+Empty response body
+
+#### Error Responses
+- 401: Unauthorized - Invalid or missing JWT token
+- 403: Forbidden - User ID in JWT doesn't match path parameter
+- 404: Not Found - Task doesn't exist for this user
+
+---
+
+### PATCH /api/{user_id}/tasks/{id}/complete
+**Description**: Toggle the completion status of a specific task for a user
+
+#### Request
+```
+PATCH /api/{user_id}/tasks/{id}/complete
+Authorization: Bearer {valid_jwt_token}
+Content-Type: application/json
+```
+
+#### Path Parameters
+- `user_id` (string, required): ID of the user
+- `id` (string, required): ID of the task to toggle
+
+#### Request Body
+```json
+{}
+```
+
+#### Response (200 OK)
+```json
+{
+  "id": "uuid-string",
+  "title": "Task title",
+  "description": "Optional task description",
+  "completed": true,
+  "user_id": "user-id-string",
+  "created_at": "2026-01-28T12:34:56.789Z",
+  "updated_at": "2026-01-28T15:42:10.123Z"
+}
+```
+
+#### Error Responses
+- 401: Unauthorized - Invalid or missing JWT token
+- 403: Forbidden - User ID in JWT doesn't match path parameter
+- 404: Not Found - Task doesn't exist for this user
+
+---
+
+## Security Requirements
+
+### Authentication Validation
+- All endpoints require valid JWT in Authorization header
+- User ID in JWT must match user_id in path parameter
+- Expired or malformed tokens result in 401 Unauthorized
+
+### Authorization Enforcement
+- Users can only access tasks they own (filtered by user_id)
+- Cross-user access attempts result in 403 Forbidden
+- Task ownership verified at database query level
+
+### Input Validation
+- Task titles must not be empty
+- Task IDs must be valid UUIDs
+- All inputs validated before database operations
+
+## Performance Requirements
+
+### Response Times
+- All endpoints should respond within 500ms for 95% of requests
+- Database queries should leverage indexes on user_id
+- Large result sets should be paginated
+
+### Error Handling
+- All errors return appropriate HTTP status codes
+- Error messages don't leak internal system details
+- Validation errors are specific to the failing field
