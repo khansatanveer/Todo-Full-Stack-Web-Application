@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 class UserBase(SQLModel):
     """Base class for User model with common fields"""
     email: str = Field(unique=True, nullable=False, max_length=255)
+    name: str = Field(nullable=False, max_length=255)
 
 
 class User(UserBase, table=True):
@@ -18,14 +19,17 @@ class User(UserBase, table=True):
     Fields:
     - id (UUID): Unique identifier for the user
     - email (String): User's email address (unique)
+    - name (String): User's full name
+    - hashed_password (String): Hashed password for authentication
     - created_at (DateTime): Timestamp of user creation
     - updated_at (DateTime): Timestamp of last update
     """
     __tablename__ = "users"
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    hashed_password: str = Field(nullable=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-
+    is_active: bool = Field(default=True)  
     # Relationship to tasks (one-to-many)
     tasks: List["Task"] = Relationship(back_populates="owner")
 

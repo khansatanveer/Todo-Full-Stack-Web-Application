@@ -34,10 +34,16 @@ app = FastAPI(
     lifespan=lifespan # Pass lifespan to FastAPI app
 )
 
+origins = [
+    "http://localhost:3000",      # Next.js dev server
+    "http://127.0.0.1:3000",      # sometimes needed
+    # Add your production frontend domain later, e.g. "https://your-app.vercel.app"
+]
+
 # Configure CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=origins,              # ← no wildcard when credentials=True
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,6 +61,7 @@ from sqlmodel import SQLModel
 app.include_router(task_routes.router, prefix="/api", tags=["tasks"])
 app.include_router(auth_routes.router, prefix="/api/auth", tags=["auth"])
 app.include_router(users_routes.router, prefix="/api/users", tags=["users"])
+
 
 @app.get("/")
 def read_root():

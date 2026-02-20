@@ -8,17 +8,21 @@ from src.utils.jwt_utils import verify_token
 from src.services.user_service import UserService
 from src.models.user import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
 
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db_session: AsyncSession = Depends(get_db_session)):
+    print("TOKEN RECEIVED:", token)
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     payload = verify_token(token, credentials_exception)
+    print("PAYLOAD:", payload)
     user = await UserService.get_user_by_email(db_session, payload.get("sub"))
+    print("USER FOUND:", user)
     if user is None:
         raise credentials_exception
     return user

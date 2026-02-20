@@ -5,9 +5,9 @@ from src.api.deps import get_current_active_user
 from src.database.session import get_db_session
 from src.utils.auth_utils import check_cross_user_access_attempt
 from src.services.user_service import UserService
-
-router = APIRouter(prefix="/users", tags=["users"])
-
+from src.models.user import User
+from src.api.deps import get_current_active_user
+router = APIRouter(tags=["users"])
 
 @router.get("/{user_id}")
 async def get_user_by_id(
@@ -83,4 +83,20 @@ async def delete_user_by_id(
     return {
         "user_id": current_user.id,
         "message": f"Successfully deleted user {user_id} account"
+    }
+
+
+@router.get("/me")
+async def read_users_me(
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get information about the currently authenticated user
+    """
+    return {
+        "id": str(current_user.id),
+        "email": current_user.email,
+        "name": current_user.name,
+        # Add any other fields you want to expose
+        "is_active": current_user.is_active,
     }

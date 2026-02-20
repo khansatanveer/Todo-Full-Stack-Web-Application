@@ -65,3 +65,6 @@ async def init_db():
             await conn.run_sync(SQLModel.metadata.create_all)
 
     print("Database tables initialized successfully!")
+
+
+    
