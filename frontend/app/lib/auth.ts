@@ -1,14 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { authClient } from 'better-auth/client';
+import { createAuthClient } from 'better-auth/client';
 import { AUTH_CONSTANTS } from '@/lib/auth/constants';
 
 // Initialize Better Auth client
-const betterAuthClient = authClient({
+const betterAuthClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || 'http://localhost:3000',
   fetchOptions: {
     credentials: 'include',
   }
 });
+
 
 // Create a wrapper for useSession hook that works with Better Auth
 export const useSession = () => {
