@@ -36,7 +36,7 @@ export default function SignUpPage() {
 
   try {
     // Use Better Auth instead of custom API
-    const result = await signUp({ email, password, name });
+    const result = await signUp.email({ email, password, name });
 
     if (result?.error) {
       throw new Error(result.error.message || 'Registration failed');

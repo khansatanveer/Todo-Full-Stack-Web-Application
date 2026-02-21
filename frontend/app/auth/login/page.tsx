@@ -22,9 +22,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Use backend API instead of Better Auth
       // Use Better Auth instead of custom API
-      const result = await signIn({ email, password });
+      const result = await signIn.email({ email, password });
 
       if (result?.error) {
         throw new Error(result.error.message || 'Sign in failed');
