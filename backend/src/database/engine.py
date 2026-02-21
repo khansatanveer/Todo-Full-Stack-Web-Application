@@ -4,23 +4,34 @@ from sqlmodel import SQLModel
 from src.config.settings import settings
 import os
 
-# Create async engine with Neon PostgreSQL connection
-# Convert standard PostgreSQL URL to asyncpg-compatible URL by changing postgresql:// to postgresql+asyncpg://
+# Determine the database URL based on the environment
 database_url = settings.DATABASE_URL or os.getenv("DATABASE_URL", "")
-if database_url and database_url.startswith("postgresql://"):
-    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    # Remove sslmode and channel_binding from URL string if present, handle via connect_args
-    if "?" in database_url:
-        database_url = database_url.split("?")[0]
 
-engine = create_async_engine(
-    database_url,
-    echo=False,
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10,
-    connect_args={"ssl": True} # Explicitly enable SSL
-) # Missing closing parenthesis
+# Check if it's a SQLite URL
+if database_url.startswith("sqlite://"):
+    # Use sqlite for local development
+    engine = create_async_engine(
+        database_url,
+        echo=False,
+        connect_args={"check_same_thread": False}  # Required for SQLite
+    )
+else:
+    # Use PostgreSQL for production
+    # Convert standard PostgreSQL URL to asyncpg-compatible URL by changing postgresql:// to postgresql+asyncpg://
+    if database_url and database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # Remove sslmode and channel_binding from URL string if present, handle via connect_args
+        if "?" in database_url:
+            database_url = database_url.split("?")[0]
+
+    engine = create_async_engine(
+        database_url,
+        echo=False,
+        pool_pre_ping=True,
+        pool_size=5,
+        max_overflow=10,
+        connect_args={"ssl": True} # Explicitly enable SSL
+    )
 
 # Create async session factory
 AsyncSessionLocal = sessionmaker(
