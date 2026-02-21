@@ -17,13 +17,14 @@ export const useSession = () => {
     queryKey: ['session'],
     queryFn: async () => {
       try {
-        const session = await betterAuthClient.getSession();
-        return session?.session ? session.session : null;
+        const { data } = await betterAuthClient.getSession();
+        return data?.session ? data.session : null;
       } catch (error: any) {
         console.error('Session verification error:', error.message || error);
         return null;
       }
     },
+
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
   });
@@ -35,8 +36,8 @@ export const signUp = betterAuthClient.signUp.email;
 export const signOut = betterAuthClient.signOut;
 export const getSession = async () => {
   try {
-    const session = await betterAuthClient.getSession();
-    return session?.session ? session.session : null;
+    const { data } = await betterAuthClient.getSession();
+    return data?.session ? data.session : null;
   } catch (error) {
     console.error('Session verification failed:', error);
     return null;
