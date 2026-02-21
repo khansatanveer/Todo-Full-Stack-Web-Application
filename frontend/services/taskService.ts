@@ -1,4 +1,4 @@
-import { Task, CreateTaskData, UpdateTaskData, TasksResponse, TaskResponse } from '@/types/task';
+import { CreateTaskRequest, UpdateTaskData, TasksResponse, TaskResponse } from '@/types/task';
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -36,7 +36,7 @@ const TaskService = {
   },
 
   // Create a new task
-  async createTask(data: CreateTaskData): Promise<TaskResponse> { // Changed return type
+  async createTask(data: CreateTaskRequest): Promise<TaskResponse> { // Changed return type
     const response = await fetch(`${API_BASE_URL}/tasks`, {
       method: 'POST',
       headers: getAuthHeaders(),
