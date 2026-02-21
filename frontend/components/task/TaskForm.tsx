@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Task, CreateTaskRequest } from '../../types/task';
-import ApiClient from '../../lib/api/client';
+import { apiFetch } from '../../lib/api/client';
 
 interface TaskFormProps {
   onTaskCreated: (newTask: Task) => void;
@@ -20,20 +20,30 @@ export default function TaskForm({ onTaskCreated, userId }: TaskFormProps) {
     setError('');
     setLoading(true);
 
-    try {
-      const taskData: CreateTaskRequest = {
-        title: title.trim(),
-        description: description.trim() || undefined
-      };
+try {
+  const taskData: CreateTaskRequest = {
+    title: title.trim(),
+    description: description.trim() || undefined
+  };
 
-      // Create the task using the API client
-      const newTask = await ApiClient.post<Task>(`/api/${userId}/tasks`, taskData);
-      onTaskCreated(newTask);
+  const response = await apiFetch(`/api/${userId}/tasks`, {
+    method: 'POST',
+    body: JSON.stringify(taskData),
+  });
 
-      // Reset form
-      setTitle('');
-      setDescription('');
-    } catch (err: any) {
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to create task');
+  }
+
+  const data = await response.json();
+  const newTask: Task = data.task;
+
+  onTaskCreated(newTask);
+
+  setTitle('');
+  setDescription('');
+} catch (err: any) {
       setError(err.message || 'Failed to create task');
     } finally {
       setLoading(false);
