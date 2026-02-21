@@ -1,15 +1,14 @@
 // Authentication constants
 export const AUTH_CONSTANTS = {
-  // Better Auth uses cookie-based authentication, but we keep some constants for reference
-  // JWT Algorithm (not used directly with Better Auth, but kept for API compatibility)
+  // JWT Algorithm
   JWT_ALGORITHM: 'HS256',
 
-  // Token expiration (not used directly with Better Auth)
+  // Token expiration (7 days in seconds - as per our spec)
   TOKEN_EXPIRATION: 7 * 24 * 60 * 60,
 
-  // Local storage keys (not used with Better Auth - it uses cookies)
+  // Local storage keys
   ACCESS_TOKEN_KEY: 'better-auth.session_token',
-  REFRESH_TOKEN_KEY: 'better-auth.refresh_token',
+  REFRESH_TOKEN_KEY: 'refresh_token',
 
   // API endpoints
   AUTH_BASE_PATH: '/api/auth',

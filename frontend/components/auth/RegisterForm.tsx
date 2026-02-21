@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signUp } from '@/lib/auth';
 
 export default function RegisterForm() {
   const [email, setEmail] = useState('');
@@ -24,17 +23,30 @@ export default function RegisterForm() {
     setLoading(true);
 
     try {
-      // Use Better Auth instead of custom API
-      const result = await signUp({ email, password });
+      // Use backend API instead of Better Auth
+      const response = await fetch('http://localhost:8000/api/auth/sign-up/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (result?.error) {
-        throw new Error(result.error.message || 'Registration failed');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Registration failed');
+      }
+
+      const data = await response.json();
+      // Store token in localStorage or cookies if needed
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('access_token', data.access_token);
       }
 
       // Registration successful, redirect to dashboard
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+    } catch (err) {
+      setError('An unexpected error occurred');
       console.error('Registration error:', err);
     } finally {
       setLoading(false);

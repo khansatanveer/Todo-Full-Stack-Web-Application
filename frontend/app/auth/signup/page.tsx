@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signUp } from '@/lib/auth';
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
@@ -35,14 +34,29 @@ export default function SignUpPage() {
     }
 
   try {
-    // Use Better Auth instead of custom API
-    const result = await signUp.email({ email, password, name });
+    const response = await fetch('http://localhost:8000/api/auth/sign-up/email', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ email, password, name }),
+});
 
-    if (result?.error) {
-      throw new Error(result.error.message || 'Registration failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Registration failed');
     }
 
-    // Sign up successful, redirect to dashboard
+    const data = await response.json();
+
+    // Token store kar rahe ho — yeh sahi hai
+    if (data.access_token) {
+      localStorage.setItem('access_token', data.access_token);
+    }
+
+    // Optional: agar refresh token bhi aa raha hai to
+    // if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token);
+
     router.push('/dashboard');
   } catch (err: any) {
     console.error('Signup error:', err);

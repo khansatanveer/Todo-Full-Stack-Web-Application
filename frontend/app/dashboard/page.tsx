@@ -45,15 +45,14 @@ useEffect(() => {
       const session = await getSession();
 
       if (!session?.user) {
-        router.replace('/auth/login');
+        router.replace('/auth/login'); 
         return;
       }
 
-      setUser(session.user);
+        setUser(session.user);
 
-      // Update TaskService to work with Better Auth if needed
-      const response = await TaskService.getUserTasks();
-      setTasks(response.tasks || []);
+        const response = await TaskService.getUserTasks();
+        setTasks(response.tasks || []);
     } catch (err) {
       console.error(err);
       setError('Failed to load session or tasks');

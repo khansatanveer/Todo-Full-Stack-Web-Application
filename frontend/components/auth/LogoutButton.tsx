@@ -2,28 +2,20 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signOut } from '@/lib/auth';
 
 export default function LogoutButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setLoading(true);
 
-    try {
-      // Use Better Auth to sign out
-      await signOut();
-
-      // Redirect to login
-      router.push('/auth/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Even if there's an error, redirect to login
-      router.push('/auth/login');
-    } finally {
-      setLoading(false);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('access_token'); // remove JWT token
+      localStorage.removeItem('refresh_token'); // optional
     }
+
+    router.push('/auth/login'); // redirect to login
   };
 
   return (

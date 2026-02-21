@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signIn } from '@/lib/auth';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -19,17 +18,30 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      // Use Better Auth instead of custom API
-      const result = await signIn({ email, password });
+      // Use backend API instead of Better Auth
+      const response = await fetch('http://localhost:8000/api/auth/sign-in/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (result?.error) {
-        throw new Error(result.error.message || 'Login failed');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Login failed');
+      }
+
+      const data = await response.json();
+      // Store token in localStorage or cookies if needed
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('access_token', data.access_token);
       }
 
       // Login successful, redirect to dashboard
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+    } catch (err) {
+      setError('An unexpected error occurred');
       console.error('Login error:', err);
     } finally {
       setLoading(false);

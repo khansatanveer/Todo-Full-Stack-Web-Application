@@ -3,10 +3,15 @@ import { Task, CreateTaskData, UpdateTaskData, TasksResponse, TaskResponse } fro
 const API_BASE_URL = 'http://localhost:8000/api';
 
 // Helper function to get the authorization header
-// Better Auth uses cookies for authentication, so we don't need to manually include the token
 const getAuthHeaders = (): HeadersInit => {
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    throw new Error('No access token found');
+  }
+
   return {
     'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`,
   };
 };
 
@@ -25,7 +30,6 @@ const TaskService = {
     const response = await fetch(`${API_BASE_URL}/tasks`, {
       method: 'GET',
       headers: getAuthHeaders(),
-      credentials: 'include', // Include cookies for authentication
     });
 
     return handleResponse(response);
@@ -37,7 +41,6 @@ const TaskService = {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
-      credentials: 'include', // Include cookies for authentication
     });
 
     return handleResponse(response);
@@ -49,7 +52,6 @@ const TaskService = {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
-      credentials: 'include', // Include cookies for authentication
     });
 
     return handleResponse(response);
@@ -60,7 +62,6 @@ const TaskService = {
     const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
-      credentials: 'include', // Include cookies for authentication
     });
 
     if (!response.ok) {
@@ -74,7 +75,6 @@ const TaskService = {
     const response = await fetch(`${API_BASE_URL}/tasks/${id}/toggle`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
-      credentials: 'include', // Include cookies for authentication
     });
 
     return handleResponse(response);

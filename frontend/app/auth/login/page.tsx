@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { signIn } from '@/lib/auth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,11 +21,24 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Use Better Auth instead of custom API
-      const result = await signIn.email({ email, password });
+      // Use backend API instead of Better Auth
+      const response = await fetch('http://localhost:8000/api/auth/sign-in/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (result?.error) {
-        throw new Error(result.error.message || 'Sign in failed');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Sign in failed');
+      }
+
+      const data = await response.json();
+      // Store token in localStorage or cookies if needed
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('access_token', data.access_token);
       }
 
       // Sign in successful, redirect to dashboard
