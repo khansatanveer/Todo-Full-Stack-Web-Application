@@ -1,6 +1,5 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 from datetime import datetime
-from typing import Optional
 import uuid
 
 class UserBase(BaseModel):
@@ -19,5 +18,4 @@ class UserRead(UserBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
