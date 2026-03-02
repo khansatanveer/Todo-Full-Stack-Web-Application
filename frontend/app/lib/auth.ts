@@ -11,7 +11,8 @@ export const useSession = () => {
         if (token) {
           // Verify token by making a request to protected endpoint
           try {
-            const response = await fetch('http://localhost:8000/api/users/me', {
+            const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+            const response = await fetch(`${apiUrl}/api/users/me`, {
               headers: {
                 'Authorization': `Bearer ${token}`
               }
@@ -41,7 +42,8 @@ export const getSession = async () => {
     const token = localStorage.getItem('access_token');
     if (token) {
       try {
-        const response = await fetch('http://localhost:8000/api/users/me', {
+        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+        const response = await fetch(`${apiUrl}/api/users/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

@@ -23,8 +23,8 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   }
 
   // Construct the full URL
-  const baseUrl = 'http://localhost:8000/api';
-  const url = `${baseUrl}${endpoint}`;
+  const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+  const url = `${apiUrl}/api${endpoint}`;
 
   // Create headers with authorization token
   const headers = {

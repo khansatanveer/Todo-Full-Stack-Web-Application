@@ -36,7 +36,13 @@ app = FastAPI(
 # Configure CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://khansatanveer-full-stack-todo.hf.space",
+        "https://todo-full-stack-web-application-three.vercel.app",
+        "https://todo-full-stack-web-application-khansas-projects-79799e71.vercel.app",
+        "https://todo-full-stack-web-applic-git-de8d8f-khansas-projects-79799e71.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
