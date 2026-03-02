@@ -1,4 +1,4 @@
-import { auth } from "../../../lib/better-auth";
-import { toNextJsHandler } from "better-auth/next-js";
+import { auth } from '../../../app/lib/better-auth';
 
-export const { GET, POST } = toNextJsHandler(auth);
+// This API route handles all Better Auth requests
+export const { GET, POST } = auth;

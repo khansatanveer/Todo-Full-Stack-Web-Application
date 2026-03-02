@@ -1,11 +1,13 @@
 from typing import List, Optional
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.task import Task, TaskPublic
 from src.schemas.task import TaskCreate, TaskUpdate
 from datetime import datetime
 import uuid
 
-def create_task(db_session: Session, task_create: TaskCreate, user_id: str) -> TaskPublic:
+
+async def create_task(db_session: AsyncSession, task_create: TaskCreate, user_id: str) -> TaskPublic:
     """
     Create a new task with the authenticated user's ID
     """
@@ -17,34 +19,40 @@ def create_task(db_session: Session, task_create: TaskCreate, user_id: str) -> T
     )
 
     db_session.add(task)
-    db_session.commit()
-    db_session.refresh(task)
+    await db_session.commit()
+    await db_session.refresh(task)
 
     return TaskPublic.from_orm(task)
 
 
-def get_tasks_by_user(db_session: Session, user_id: str) -> List[TaskPublic]:
+async def get_tasks_by_user(db_session: AsyncSession, user_id: str) -> List[TaskPublic]:
     """
     Get all tasks for a specific user
     """
-    tasks = db_session.query(Task).filter(Task.user_id == user_id).all()
+    result = await db_session.execute(
+        select(Task).where(Task.user_id == user_id)
+    )
+    tasks = result.scalars().all()
 
     return [TaskPublic.from_orm(task) for task in tasks]
 
 
-def get_task_by_id_and_user(db_session: Session, task_id: str, user_id: str) -> Optional[TaskPublic]:
+async def get_task_by_id_and_user(db_session: AsyncSession, task_id: str, user_id: str) -> Optional[TaskPublic]:
     """
     Get a specific task by ID for a specific user
     """
-    task = db_session.query(Task).filter(Task.id == task_id, Task.user_id == user_id).first()
+    result = await db_session.execute(
+        select(Task).where(Task.id == task_id, Task.user_id == user_id)
+    )
+    task = result.scalar_one_or_none()
 
     if task:
         return TaskPublic.from_orm(task)
     return None
 
 
-def update_task_by_id_and_user(
-    db_session: Session,
+async def update_task_by_id_and_user(
+    db_session: AsyncSession,
     task_id: str,
     user_id: str,
     task_update: TaskUpdate
@@ -52,7 +60,10 @@ def update_task_by_id_and_user(
     """
     Update a specific task for a specific user
     """
-    task = db_session.query(Task).filter(Task.id == task_id, Task.user_id == user_id).first()
+    result = await db_session.execute(
+        select(Task).where(Task.id == task_id, Task.user_id == user_id)
+    )
+    task = result.scalar_one_or_none()
 
     if not task:
         return None
@@ -67,32 +78,38 @@ def update_task_by_id_and_user(
 
     task.updated_at = datetime.utcnow()
 
-    db_session.commit()
-    db_session.refresh(task)
+    await db_session.commit()
+    await db_session.refresh(task)
 
     return TaskPublic.from_orm(task)
 
 
-def delete_task_by_id_and_user(db_session: Session, task_id: str, user_id: str) -> bool:
+async def delete_task_by_id_and_user(db_session: AsyncSession, task_id: str, user_id: str) -> bool:
     """
     Delete a specific task for a specific user
     """
-    task = db_session.query(Task).filter(Task.id == task_id, Task.user_id == user_id).first()
+    result = await db_session.execute(
+        select(Task).where(Task.id == task_id, Task.user_id == user_id)
+    )
+    task = result.scalar_one_or_none()
 
     if not task:
         return False
 
-    db_session.delete(task)
-    db_session.commit()
+    await db_session.delete(task)
+    await db_session.commit()
 
     return True
 
 
-def toggle_task_completion(db_session: Session, task_id: str, user_id: str) -> Optional[TaskPublic]:
+async def toggle_task_completion(db_session: AsyncSession, task_id: str, user_id: str) -> Optional[TaskPublic]:
     """
     Toggle the completion status of a specific task for a specific user
     """
-    task = db_session.query(Task).filter(Task.id == task_id, Task.user_id == user_id).first()
+    result = await db_session.execute(
+        select(Task).where(Task.id == task_id, Task.user_id == user_id)
+    )
+    task = result.scalar_one_or_none()
 
     if not task:
         return None
@@ -101,7 +118,7 @@ def toggle_task_completion(db_session: Session, task_id: str, user_id: str) -> O
     task.completed = not task.completed
     task.updated_at = datetime.utcnow()
 
-    db_session.commit()
-    db_session.refresh(task)
+    await db_session.commit()
+    await db_session.refresh(task)
 
     return TaskPublic.from_orm(task)

@@ -4,7 +4,7 @@ from typing import List
 import uuid
 
 from src.models.task import Task, TaskPublic
-from src.schemas.task import TaskCreate, TaskUpdate, TaskListResponse
+from src.schemas.task import TaskCreate, TaskUpdate, TaskListResponse, TaskResponse
 from src.core.auth import get_current_user
 from src.database.session import get_db_session
 from src.services.task_service import (
@@ -16,7 +16,7 @@ from src.services.task_service import (
     toggle_task_completion
 )
 
-router = APIRouter(prefix="/api", tags=["tasks"])
+router = APIRouter(tags=["tasks"])
 
 # -------------------------------
 # List all tasks for the authenticated user
@@ -39,7 +39,7 @@ async def list_tasks(
     incomplete_count = total_count - completed_count
 
     return TaskListResponse(
-        tasks=tasks,
+        tasks=[task.model_dump() for task in tasks],
         total_count=total_count,
         completed_count=completed_count,
         incomplete_count=incomplete_count
@@ -48,7 +48,7 @@ async def list_tasks(
 # -------------------------------
 # Create a new task for the authenticated user
 # -------------------------------
-@router.post("/tasks", response_model=TaskPublic, status_code=status.HTTP_201_CREATED)
+@router.post("/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_new_task(
     task_create: TaskCreate,
     current_user: dict = Depends(get_current_user),
@@ -61,12 +61,12 @@ async def create_new_task(
     user_id = current_user["user_id"]
 
     task = await create_task(db_session, task_create, str(user_id))
-    return task
+    return TaskResponse(task=task.model_dump())
 
 # -------------------------------
 # Get a single task by ID
 # -------------------------------
-@router.get("/tasks/{task_id}", response_model=TaskPublic)
+@router.get("/tasks/{task_id}", response_model=TaskResponse)
 async def get_task(
     task_id: str,
     current_user: dict = Depends(get_current_user),
@@ -94,12 +94,12 @@ async def get_task(
             detail="Task not found or does not belong to authenticated user"
         )
 
-    return task
+    return TaskResponse(task=task.model_dump())
 
 # -------------------------------
 # Update a task
 # -------------------------------
-@router.put("/tasks/{task_id}", response_model=TaskPublic)
+@router.put("/tasks/{task_id}", response_model=TaskResponse)
 async def update_existing_task(
     task_id: str,
     task_update: TaskUpdate,
@@ -128,7 +128,7 @@ async def update_existing_task(
             detail="Task not found or does not belong to authenticated user"
         )
 
-    return task
+    return TaskResponse(task=task.model_dump())
 
 # -------------------------------
 # Delete a task
@@ -166,7 +166,7 @@ async def delete_existing_task(
 # -------------------------------
 # Toggle task completion
 # -------------------------------
-@router.patch("/tasks/{task_id}/complete", response_model=TaskPublic)
+@router.patch("/tasks/{task_id}/toggle", response_model=TaskResponse)
 async def toggle_task_complete(
     task_id: str,
     current_user: dict = Depends(get_current_user),
@@ -194,4 +194,4 @@ async def toggle_task_complete(
             detail="Task not found or does not belong to authenticated user"
         )
 
-    return task
+    return TaskResponse(task=task.model_dump())

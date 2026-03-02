@@ -31,7 +31,7 @@ class UserService:
             updated_at=datetime.utcnow()
         )
 
-        db.add(db_user)
+        db.add(db_user)  # Fixed: use db instead of db_session
         await db.commit()
         await db.refresh(db_user)
         return db_user

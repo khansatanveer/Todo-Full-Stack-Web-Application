@@ -8,6 +8,7 @@ from .user import User  # Import User for the relationship
 class TaskBase(SQLModel):
     """Base class for Task model with common fields"""
     title: str = Field(min_length=1, max_length=255)
+    description: Optional[str] = None
     completed: bool = Field(default=False)
     user_id: uuid.UUID = Field(foreign_key="users.id", index=True)  # Foreign key linking to User
 
@@ -33,10 +34,27 @@ class Task(TaskBase, table=True):
     owner: Optional["User"] = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "select"})
 
 
-class TaskPublic(TaskBase):
+class TaskPublic(SQLModel):
     """
     Public representation of Task without internal fields
     """
     id: uuid.UUID
+    title: str
+    description: Optional[str] = None
+    completed: bool
+    user_id: str
     created_at: datetime
     updated_at: datetime
+
+    @classmethod
+    def from_orm(cls, task: Task) -> "TaskPublic":
+        """Convert Task model to TaskPublic with proper type conversion"""
+        return cls(
+            id=task.id,
+            title=task.title,
+            description=task.description,
+            completed=task.completed,
+            user_id=str(task.user_id),
+            created_at=task.created_at,
+            updated_at=task.updated_at,
+        )

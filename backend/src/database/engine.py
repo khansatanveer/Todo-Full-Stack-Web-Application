@@ -51,31 +51,20 @@ async def get_db_session():
 # Function to initialize the database tables
 async def init_db():
     """
-    Initialize database tables
+    Initialize database tables (only create, don't drop)
     """
     from sqlmodel import SQLModel
     from sqlalchemy import text
     import logging
 
-    # For development, we'll drop and recreate tables to handle schema changes
-    # Need to handle foreign key constraints by dropping in the right order or using CASCADE
-    async with engine.begin() as conn:
-        # First, drop all foreign key constraints, then drop tables
-        # Alternative: Use raw SQL to drop all tables with CASCADE
-        try:
-            # Drop all tables in the right order or with CASCADE
-            # Since SQLModel doesn't handle CASCADE on drop_all, we'll use raw SQL
-            await conn.execute(text("DROP TABLE IF EXISTS tasks CASCADE"))
-            await conn.execute(text("DROP TABLE IF EXISTS users CASCADE"))
-
-            # Now create all tables with the correct schema
+    try:
+        async with engine.begin() as conn:
+            # Only create tables, don't drop existing ones
             await conn.run_sync(SQLModel.metadata.create_all)
-        except Exception as e:
-            print(f"Error during initial table drop: {e}")
-            # If the above fails, try creating tables directly (might work if they don't exist yet)
-            await conn.run_sync(SQLModel.metadata.create_all)
-
-    print("Database tables initialized successfully!")
+        print("Database tables initialized successfully!")
+    except Exception as e:
+        print(f"Error during database initialization: {e}")
+        raise
 
 
     

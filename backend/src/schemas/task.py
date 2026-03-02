@@ -32,3 +32,8 @@ class TaskListResponse(BaseModel):
     total_count: int
     completed_count: int
     incomplete_count: int
+
+
+class TaskResponse(BaseModel):
+    """Wrapper for single task API responses"""
+    task: TaskPublic

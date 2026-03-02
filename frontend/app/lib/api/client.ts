@@ -3,8 +3,8 @@
  * Base URL: http://localhost:8000/api
  */
 
-// Import the auth utilities from our auth configuration
-import { getSession } from '../auth';
+// Import the auth client functions
+import { getSession } from '../../lib/auth/client';
 
 /**
  * apiFetch function that automatically attaches JWT token from Better Auth session in Authorization header
@@ -16,7 +16,7 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   // Get the session token to attach to the request
   const session = await getSession();
 
-  if (!session?.token) {
+  if (!session?.user) {
     throw new Error('User not authenticated');
   }
 
@@ -26,7 +26,7 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
 
   // Create headers with authorization token
   const headers = {
-    'Authorization': `Bearer ${session.token}`,
+    'Authorization': `Bearer ${session.user.token || session.user.access_token}`,
     'Content-Type': 'application/json',
     ...options.headers,
   };

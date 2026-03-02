@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth/client';
 import { Task } from '@/types/task';
 import TaskService from '@/services/taskService';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,9 @@ useEffect(() => {
       const session = await getSession();
 
       if (!session?.user) {
-        router.replace('/auth/login'); 
+        // Redirect to login with callbackUrl so user returns here after login
+        const currentUrl = typeof window !== 'undefined' ? window.location.pathname : '/dashboard';
+        router.replace(`/auth/login?callbackUrl=${encodeURIComponent(currentUrl)}`);
         return;
       }
 
@@ -54,9 +56,10 @@ useEffect(() => {
         const response = await TaskService.getUserTasks();
         setTasks(response.tasks || []);
     } catch (err) {
-      console.error(err);
-      setError('Failed to load session or tasks');
-      router.replace('/auth/login');
+      console.error('Dashboard error:', err);
+      // Only redirect if it's an authentication error (401/403)
+      // For other errors (like network issues), just show error message
+      setError('Failed to load tasks. Please try again.');
     } finally {
       setLoading(false);
     }

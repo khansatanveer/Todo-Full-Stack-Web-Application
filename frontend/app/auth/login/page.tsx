@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -36,15 +37,20 @@ export default function LoginPage() {
       }
 
       const data = await response.json();
-      // Store token in localStorage or cookies if needed
+      
+      // Store token in localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('access_token', data.access_token);
       }
 
-      // Sign in successful, redirect to dashboard
-      router.push('/dashboard');
+      // Sign in successful, redirect to callbackUrl or default to dashboard
+      const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+      
+      // Use window.location.href for a full page reload to ensure token is available
+      window.location.href = callbackUrl;
     } catch (err: any) {
       setError(err.message || 'An error occurred during sign in');
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }

@@ -8,9 +8,9 @@ export interface Task {
   updated_at: string;
 }
 
-export interface CreateTaskRequest {
+export interface CreateTaskData {
   title: string;
-  description?: string;
+  description?: string; // Added optional description
   completed?: boolean;
 }
 

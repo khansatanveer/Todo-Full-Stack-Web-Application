@@ -2,10 +2,20 @@ from fastapi import Request, HTTPException, Depends
 from typing import Dict, Any
 import os
 from datetime import datetime
-import jwt
-from jwt import DecodeError, ExpiredSignatureError
+from jose import jwt, JWTError, ExpiredSignatureError
 from ..models.user import User
 import uuid
+
+
+def get_secret_key() -> str:
+    """Get the JWT secret key from environment"""
+    secret = os.getenv("BETTER_AUTH_SECRET")
+    if not secret:
+        # Fallback to SECRET_KEY for backward compatibility
+        secret = os.getenv("SECRET_KEY")
+    if not secret:
+        raise HTTPException(status_code=500, detail="Authentication secret not configured")
+    return secret
 
 
 def get_current_user(request: Request) -> Dict[str, Any]:
@@ -34,9 +44,7 @@ def get_current_user(request: Request) -> Dict[str, Any]:
         raise HTTPException(status_code=401, detail="Token not found in Authorization header")
 
     # Get the secret from environment variables
-    secret = os.getenv("BETTER_AUTH_SECRET")
-    if not secret:
-        raise HTTPException(status_code=500, detail="Authentication secret not configured")
+    secret = get_secret_key()
 
     try:
         # Verify JWT signature and decode payload
@@ -58,18 +66,16 @@ def get_current_user(request: Request) -> Dict[str, Any]:
             if datetime.fromtimestamp(exp) < datetime.utcnow():
                 raise HTTPException(status_code=401, detail="Token has expired")
 
-        # Return the user information
+        # Return the user information - include ALL fields from payload
         return {
             "user_id": user_id,
             "email": payload["email"],
-            "exp": exp
+            "name": payload.get("name", ""),
         }
 
     except ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
-    except DecodeError:
-        raise HTTPException(status_code=401, detail="Invalid token: unable to decode")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token: signature verification failed")
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
