@@ -7,8 +7,9 @@ export async function apiFetch(
   options: RequestInit = {}
 ) {
   const session = await getSession();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 
-  if (!session?.token) {
+  if (!session || !token) {
     throw new Error("User not authenticated");
   }
 
@@ -16,7 +17,7 @@ export async function apiFetch(
     ...options,
     headers: {
       ...(options.headers || {}),
-      Authorization: `Bearer ${session.token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
   });
