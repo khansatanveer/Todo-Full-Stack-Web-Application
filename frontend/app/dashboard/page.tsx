@@ -36,18 +36,24 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
 
-const router = useRouter();
+  const router = useRouter();
   // Get user from session
 useEffect(() => {
   const loadSessionAndTasks = async () => {
     setLoading(true);
     try {
       const session = await getSession();
+      console.log('Session result:', session);
 
       if (!session?.user) {
         // Redirect to login with callbackUrl so user returns here after login
-        const currentUrl = typeof window !== 'undefined' ? window.location.pathname : '/dashboard';
-        router.replace(`/auth/login?callbackUrl=${encodeURIComponent(currentUrl)}`);
+        // Use window.location.href for immediate redirect to prevent loop
+        if (typeof window !== 'undefined') {
+          const currentPath = window.location.pathname;
+          const search = window.location.search;
+          const fullCurrentUrl = search ? `${currentPath}${search}` : currentPath;
+          window.location.href = `/auth/login?callbackUrl=${encodeURIComponent(fullCurrentUrl)}`;
+        }
         return;
       }
 
@@ -57,7 +63,19 @@ useEffect(() => {
         setTasks(response.tasks || []);
     } catch (err) {
       console.error('Dashboard error:', err);
-      // Only redirect if it's an authentication error (401/403)
+      // Check if it's an authentication error (token invalid/expired)
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+        // Token is invalid, redirect to login
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('access_token');
+          const currentPath = window.location.pathname;
+          const search = window.location.search;
+          const fullCurrentUrl = search ? `${currentPath}${search}` : currentPath;
+          window.location.href = `/auth/login?callbackUrl=${encodeURIComponent(fullCurrentUrl)}`;
+        }
+        return;
+      }
       // For other errors (like network issues), just show error message
       setError('Failed to load tasks. Please try again.');
     } finally {

@@ -16,6 +16,9 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Get callbackUrl from search params, default to /dashboard
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -33,20 +36,33 @@ function LoginForm() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Sign in failed');
+        const text = await response.text();
+        // Check if response is HTML error page
+        if (text.trim().startsWith('<') || text.includes('Internal')) {
+          throw new Error('Server error. Please try again.');
+        }
+        try {
+          const errorData = JSON.parse(text);
+          throw new Error(errorData.detail || errorData.message || 'Sign in failed');
+        } catch {
+          throw new Error('Sign in failed');
+        }
       }
 
-      const data = await response.json();
-      
+      const text = await response.text();
+      // Check if response is valid JSON
+      if (text.trim().startsWith('<') || text.includes('Internal')) {
+        throw new Error('Server error. Please try again.');
+      }
+
+      const data = JSON.parse(text);
+
       // Store token in localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('access_token', data.access_token);
       }
 
-      // Sign in successful, redirect to callbackUrl or default to dashboard
-      const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
-      
+      // Sign in successful, redirect to callbackUrl
       // Use window.location.href for a full page reload to ensure token is available
       window.location.href = callbackUrl;
     } catch (err: any) {
@@ -104,7 +120,7 @@ function LoginForm() {
           <div className="text-center text-sm pt-4">
             <p>
               Don&apos;t have an account?{' '}
-              <Link href="/auth/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <Link href={`/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="font-medium text-indigo-600 hover:text-indigo-500">
                 Sign up
               </Link>
             </p>

@@ -52,14 +52,15 @@ class SecurityMiddleware:
             # Log the actual error for debugging (server-side only)
             logger.error(f"Unexpected error occurred: {str(e)}", exc_info=True)
 
-            # Return generic error to prevent information disclosure
+            # Return generic error as proper JSON to prevent information disclosure
             return JSONResponse(
                 status_code=500,
                 content={
+                    "detail": "An internal error occurred",
                     "error": "INTERNAL_ERROR",
-                    "message": "An internal error occurred",
                     "status_code": 500
-                }
+                },
+                headers={"Content-Type": "application/json"}
             )
 
     async def sanitize_request(self, request: Request):

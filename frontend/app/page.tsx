@@ -29,13 +29,13 @@ export default function HomePage() {
         </div>
         <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
           <Link
-            href="/auth/login"
+            href="/auth/login?callbackUrl=/dashboard"
             className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gray-900 px-5 text-white transition-colors hover:bg-gray-800 dark:hover:bg-gray-700 md:w-[158px]"
           >
             Login
           </Link>
           <Link
-            href="/auth/register"
+            href="/auth/signup?callbackUrl=/dashboard"
             className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-gray-800 px-5 transition-colors hover:border-transparent hover:bg-gray-100 dark:border-gray-300 dark:hover:bg-gray-800 md:w-[158px]"
           >
             Register

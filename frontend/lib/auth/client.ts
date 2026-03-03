@@ -7,26 +7,47 @@ export async function getSession() {
 
   try {
     const token = localStorage.getItem('access_token');
+    console.log('getSession - token exists?', !!token);
     if (!token) return null;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+    console.log('getSession - fetching from:', `${apiUrl}/api/users/me`);
+    
     const response = await fetch(`${apiUrl}/api/users/me`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      credentials: 'include', // agar future mein cookie use karo
+      credentials: 'include',
       cache: 'no-store',
     });
 
+    console.log('getSession - response status:', response.status);
+    const text = await response.text();
+    console.log('getSession - response text:', text.substring(0, 200));
+
     if (!response.ok) {
-      console.error('Session fetch failed:', response.status, await response.text());
+      // Check if response is HTML (error page) instead of JSON
+      if (text.trim().startsWith('<') || text.includes('Internal')) {
+        console.error('Received HTML error instead of JSON');
+        localStorage.removeItem('access_token');
+        return null;
+      }
+      
+      try {
+        const errorData = JSON.parse(text);
+        console.error('Error data:', errorData);
+      } catch {
+        console.error('Non-JSON response:', text);
+      }
+      
       localStorage.removeItem('access_token'); // invalid token remove kar do
       return null;
     }
 
-    const data = await response.json();
+    const data = JSON.parse(text);
+    console.log('getSession - user data:', data);
     return { user: data }; // assuming backend { id, email, name, ... } return karta
   } catch (err) {
     console.error('getSession error:', err);

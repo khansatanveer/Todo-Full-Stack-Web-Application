@@ -6,6 +6,7 @@ from src.schemas.user import UserCreate, UserLogin
 from src.services.user_service import UserService
 from src.utils.jwt_utils import create_access_token
 import logging
+import traceback
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,17 +37,28 @@ def generate_auth_response(user):
 
 @router.post("/sign-up/email")
 async def register_user(user: UserCreate, db: AsyncSession = Depends(get_db_session)):
-    db_user = await UserService.get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered",
-        )
     try:
-        new_user = await UserService.create_user(db, user=user)
-        return generate_auth_response(new_user)
+        db_user = await UserService.get_user_by_email(db, email=user.email)
+        if db_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered",
+            )
+        try:
+            new_user = await UserService.create_user(db, user=user)
+            return generate_auth_response(new_user)
+        except Exception as e:
+            logger.error(f"Error during user registration: {e}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Registration failed: {str(e)}",
+            )
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error during user registration: {e}")
+        logger.error(f"Unexpected error during registration: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Registration failed.",
@@ -55,29 +67,39 @@ async def register_user(user: UserCreate, db: AsyncSession = Depends(get_db_sess
 # 1. Yeh Frontend ke liye hai (Jo JSON accept karta hai)
 @router.post("/sign-in/email")
 async def login_user_frontend(user_credentials: UserLogin, db: AsyncSession = Depends(get_db_session)):
-    db_user = await UserService.authenticate_user(
-        db,
-        email=user_credentials.email,
-        password=user_credentials.password
-    )
-    if not db_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+    try:
+        db_user = await UserService.authenticate_user(
+            db,
+            email=user_credentials.email,
+            password=user_credentials.password
         )
-    return generate_auth_response(db_user)
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+            )
+        return generate_auth_response(db_user)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error during login: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Login failed: {str(e)}",
+        )
 
 # 2. Yeh Swagger 'Authorize' button ke liye hai (Jo Form-Data accept karta hai)
 # Iska path '/login' rakha hai taaki hum tokenUrl se match kar sakein
 @router.post("/login")
 async def login_for_swagger(
-    form_data: OAuth2PasswordRequestForm = Depends(), 
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db_session)
 ):
     # Note: Swagger email ko 'username' field mein bhejta hai
     db_user = await UserService.authenticate_user(
         db,
-        email=form_data.username, 
+        email=form_data.username,
         password=form_data.password
     )
     if not db_user:

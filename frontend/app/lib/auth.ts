@@ -45,12 +45,20 @@ export const getSession = async () => {
         const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
         const response = await fetch(`${apiUrl}/api/users/me`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
           }
         });
 
         if (response.ok) {
-          return await response.json();
+          const text = await response.text();
+          // Check if response is valid JSON
+          if (text.trim().startsWith('<') || text.includes('Internal')) {
+            console.error('Received non-JSON response from /api/users/me');
+            localStorage.removeItem('access_token');
+            return null;
+          }
+          return JSON.parse(text);
         }
       } catch (error) {
         console.error('Session verification failed:', error);
