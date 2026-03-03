@@ -1,15 +1,14 @@
 import { getSession } from "../auth"; // Import the auth client functions
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api` : "http://localhost:8000/api";
+const API_BASE_URL = "http://localhost:8000/api";
 
 export async function apiFetch(
   endpoint: string,
   options: RequestInit = {}
 ) {
   const session = await getSession();
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 
-  if (!session || !token) {
+  if (!session?.token) {
     throw new Error("User not authenticated");
   }
 
@@ -17,7 +16,7 @@ export async function apiFetch(
     ...options,
     headers: {
       ...(options.headers || {}),
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${session.token}`,
       "Content-Type": "application/json",
     },
   });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-function LoginForm() {
+export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -23,8 +23,7 @@ function LoginForm() {
 
     try {
       // Use backend API instead of Better Auth
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/auth/sign-in/email`, {
+      const response = await fetch('http://localhost:8000/api/auth/sign-in/email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,13 +111,5 @@ function LoginForm() {
         </form>
       </CardContent>
     </Card>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="text-center p-4">Loading login form...</div>}>
-      <LoginForm />
-    </Suspense>
   );
 }
