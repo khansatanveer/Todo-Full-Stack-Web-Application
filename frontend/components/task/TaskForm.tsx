@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Task, CreateTaskRequest } from '../../types/task';
-import ApiClient from '../../lib/api/client';
+import { Task, CreateTaskData } from '../../types/task';
+import TaskService from '../../services/taskService';
 
 interface TaskFormProps {
   onTaskCreated: (newTask: Task) => void;
@@ -21,14 +21,14 @@ export default function TaskForm({ onTaskCreated, userId }: TaskFormProps) {
     setLoading(true);
 
     try {
-      const taskData: CreateTaskRequest = {
+      const taskData: CreateTaskData = {
         title: title.trim(),
         description: description.trim() || undefined
       };
 
-      // Create the task using the API client
-      const newTask = await ApiClient.post<Task>(`/api/${userId}/tasks`, taskData);
-      onTaskCreated(newTask);
+      // Create the task using the TaskService
+      const response = await TaskService.createTask(taskData);
+      onTaskCreated(response.task);
 
       // Reset form
       setTitle('');

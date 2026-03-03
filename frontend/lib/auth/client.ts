@@ -9,7 +9,8 @@ export async function getSession() {
     const token = localStorage.getItem('access_token');
     if (!token) return null;
 
-    const response = await fetch('http://localhost:8000/api/users/me', {
+    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+    const response = await fetch(`${apiUrl}/api/users/me`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -37,7 +38,8 @@ export async function getSession() {
 export const signIn = {
   email: async ({ email, password }: { email: string; password: string }) => {
     try {
-      const response = await fetch('http://localhost:8000/api/auth/sign-in/email', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/auth/sign-in/email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,7 +68,8 @@ export const signIn = {
 export const signUp = {
   email: async ({ email, password, name }: { email: string; password: string; name?: string }) => {
     try {
-      const response = await fetch('http://localhost:8000/api/auth/sign-up/email', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/auth/sign-up/email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
