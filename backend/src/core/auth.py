@@ -48,6 +48,7 @@ def get_current_user(request: Request) -> Dict[str, Any]:
 
     try:
         # Verify JWT signature and decode payload
+        # Note: jose.jwt.decode automatically checks the 'exp' claim
         payload = jwt.decode(token, secret, algorithms=["HS256"])
 
         # Validate required fields in payload
@@ -59,12 +60,6 @@ def get_current_user(request: Request) -> Dict[str, Any]:
             user_id = uuid.UUID(payload["sub"])
         except ValueError:
             raise HTTPException(status_code=401, detail="Invalid token: user ID is not a valid UUID")
-
-        # Check if token is expired
-        exp = payload.get("exp")
-        if exp:
-            if datetime.fromtimestamp(exp) < datetime.utcnow():
-                raise HTTPException(status_code=401, detail="Token has expired")
 
         # Return the user information - include ALL fields from payload
         return {

@@ -1,15 +1,33 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signUp, getSession } from '@/lib/auth/client';
+import Link from 'next/link';
 
-export default function RegisterForm() {
+function RegisterFormContent() {
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get callbackUrl from search params, default to /dashboard
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const session = await getSession();
+      if (session?.user) {
+        window.location.href = callbackUrl.startsWith('/auth') ? '/dashboard' : callbackUrl;
+      }
+    };
+    checkSession();
+  }, [callbackUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,29 +41,18 @@ export default function RegisterForm() {
     setLoading(true);
 
     try {
-      // Use backend API instead of Better Auth
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/auth/sign-up/email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      // Use unified signUp function
+      const result = await signUp.email({ 
+        email, 
+        password, 
+        name,
+        callbackURL: callbackUrl.startsWith('/auth') ? '/dashboard' : callbackUrl 
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Registration failed');
+      if (result.error) {
+        setError(result.error.message);
       }
-
-      const data = await response.json();
-      // Store token in localStorage or cookies if needed
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('access_token', data.access_token);
-      }
-
-      // Registration successful, redirect to dashboard
-      router.push('/dashboard');
+      // Redirection is handled inside signUp.email
     } catch (err) {
       setError('An unexpected error occurred');
       console.error('Registration error:', err);
@@ -68,8 +75,22 @@ export default function RegisterForm() {
           </div>
         )}
 
-        <input type="hidden" name="remember" defaultValue="true" />
         <div className="rounded-md shadow-sm space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              Full Name
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+              placeholder="Full Name"
+            />
+          </div>
           <div>
             <label htmlFor="email-address" className="block text-sm font-medium text-gray-700">
               Email address
@@ -120,6 +141,17 @@ export default function RegisterForm() {
           </div>
         </div>
 
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-center w-full">
+            <p>
+              Already have an account?{' '}
+              <Link href={`/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="font-medium text-indigo-600 hover:text-indigo-500">
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </div>
+
         <div>
           <button
             type="submit"
@@ -133,5 +165,13 @@ export default function RegisterForm() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function RegisterForm() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Loading registration form...</div>}>
+      <RegisterFormContent />
+    </Suspense>
   );
 }

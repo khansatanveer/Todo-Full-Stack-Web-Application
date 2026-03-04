@@ -1,15 +1,31 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { signIn, getSession } from '@/lib/auth/client';
 
-export default function LoginForm() {
+function LoginFormContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get callbackUrl from search params, default to /dashboard
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const session = await getSession();
+      if (session?.user) {
+        window.location.href = callbackUrl.startsWith('/auth') ? '/dashboard' : callbackUrl;
+      }
+    };
+    checkSession();
+  }, [callbackUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,29 +34,17 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      // Use backend API instead of Better Auth
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/auth/sign-in/email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      // Use unified signIn function
+      const result = await signIn.email({ 
+        email, 
+        password, 
+        callbackURL: callbackUrl.startsWith('/auth') ? '/dashboard' : callbackUrl 
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Login failed');
+      if (result.error) {
+        setError(result.error.message);
       }
-
-      const data = await response.json();
-      // Store token in localStorage or cookies if needed
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('access_token', data.access_token);
-      }
-
-      // Login successful, redirect to dashboard
-      router.push('/dashboard');
+      // Redirection is handled inside signIn.email
     } catch (err) {
       setError('An unexpected error occurred');
       console.error('Login error:', err);
@@ -63,7 +67,6 @@ export default function LoginForm() {
           </div>
         )}
 
-        <input type="hidden" name="remember" defaultValue="true" />
         <div className="rounded-md shadow-sm space-y-4">
           <div>
             <label htmlFor="email-address" className="block text-sm font-medium text-gray-700">
@@ -100,10 +103,13 @@ export default function LoginForm() {
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="text-sm">
-            <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Don't have an account? Register
-            </Link>
+          <div className="text-sm text-center w-full">
+            <p>
+              Don't have an account?{' '}
+              <Link href={`/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="font-medium text-indigo-600 hover:text-indigo-500">
+                Register
+              </Link>
+            </p>
           </div>
         </div>
 
@@ -120,5 +126,13 @@ export default function LoginForm() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function LoginForm() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Loading login form...</div>}>
+      <LoginFormContent />
+    </Suspense>
   );
 }

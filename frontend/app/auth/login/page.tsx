@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+import { signIn, getSession } from '@/lib/auth/client';
+import { useEffect } from 'react';
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -19,52 +22,34 @@ function LoginForm() {
   // Get callbackUrl from search params, default to /dashboard
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const session = await getSession();
+      if (session?.user) {
+        window.location.href = callbackUrl.startsWith('/auth') ? '/dashboard' : callbackUrl;
+      }
+    };
+    checkSession();
+  }, [callbackUrl]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      // Use backend API instead of Better Auth
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/auth/sign-in/email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      // Use our unified signIn function that handles token storage and redirection
+      const result = await signIn.email({
+        email,
+        password,
+        callbackURL: callbackUrl.startsWith('/auth') ? '/dashboard' : callbackUrl
       });
 
-      if (!response.ok) {
-        const text = await response.text();
-        // Check if response is HTML error page
-        if (text.trim().startsWith('<') || text.includes('Internal')) {
-          throw new Error('Server error. Please try again.');
-        }
-        try {
-          const errorData = JSON.parse(text);
-          throw new Error(errorData.detail || errorData.message || 'Sign in failed');
-        } catch {
-          throw new Error('Sign in failed');
-        }
+      if (result.error) {
+        setError(result.error.message);
       }
-
-      const text = await response.text();
-      // Check if response is valid JSON
-      if (text.trim().startsWith('<') || text.includes('Internal')) {
-        throw new Error('Server error. Please try again.');
-      }
-
-      const data = JSON.parse(text);
-
-      // Store token in localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('access_token', data.access_token);
-      }
-
-      // Sign in successful, redirect to callbackUrl
-      // Use window.location.href for a full page reload to ensure token is available
-      window.location.href = callbackUrl;
+      // Redirection is handled inside signIn.email
     } catch (err: any) {
       setError(err.message || 'An error occurred during sign in');
       console.error('Login error:', err);

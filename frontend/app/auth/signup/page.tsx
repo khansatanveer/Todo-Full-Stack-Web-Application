@@ -4,12 +4,26 @@ import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
+import { signUp, getSession } from '@/lib/auth/client';
+import { useEffect } from 'react';
+
 function SignUpForm({ callbackUrl }: { callbackUrl: string }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const session = await getSession();
+      if (session?.user) {
+        window.location.href = callbackUrl.startsWith('/auth') ? '/dashboard' : callbackUrl;
+      }
+    };
+    checkSession();
+  }, [callbackUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,41 +43,18 @@ function SignUpForm({ callbackUrl }: { callbackUrl: string }) {
     }
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/auth/sign-up/email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, name }),
+      // Use unified signUp function that handles token storage and redirection
+      const result = await signUp.email({
+        email,
+        password,
+        name,
+        callbackURL: callbackUrl
       });
 
-      if (!response.ok) {
-        const text = await response.text();
-        if (text.trim().startsWith('<') || text.includes('Internal')) {
-          throw new Error('Server error. Please try again.');
-        }
-        try {
-          const errorData = JSON.parse(text);
-          throw new Error(errorData.detail || errorData.message || 'Registration failed');
-        } catch {
-          throw new Error('Registration failed');
-        }
+      if (result.error) {
+        setError(result.error.message);
       }
-
-      const text = await response.text();
-      if (text.trim().startsWith('<') || text.includes('Internal')) {
-        throw new Error('Server error. Please try again.');
-      }
-      
-      const data = JSON.parse(text);
-
-      if (data.access_token) {
-        localStorage.setItem('access_token', data.access_token);
-      }
-
-      // Redirect to callbackUrl after successful signup
-      window.location.href = callbackUrl;
+      // Redirection is handled inside signUp.email
     } catch (err: any) {
       console.error('Signup error:', err);
       setError(err.message || 'Registration failed. Please try again.');

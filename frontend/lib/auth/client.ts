@@ -19,7 +19,6 @@ export async function getSession() {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
       cache: 'no-store',
     });
 
@@ -57,7 +56,7 @@ export async function getSession() {
 
 // Export simple auth functions that use the backend API
 export const signIn = {
-  email: async ({ email, password }: { email: string; password: string }) => {
+  email: async ({ email, password, callbackURL = '/dashboard' }: { email: string; password: string; callbackURL?: string }) => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
       const response = await fetch(`${apiUrl}/api/auth/sign-in/email`, {
@@ -74,12 +73,23 @@ export const signIn = {
       }
 
       const data = await response.json();
+      
+      if (!data.access_token) {
+        return { error: { message: 'Token not received from server' } };
+      }
+
       // Store token in localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('access_token', data.access_token);
+        
+        // Use window.location.href for immediate redirect to ensure 
+        // fresh session state on the target page
+        if (callbackURL) {
+          window.location.href = callbackURL;
+        }
       }
 
-      return { user: { email } }; // Simplified response
+      return { user: data.user || { email } }; 
     } catch (error: any) {
       return { error: { message: error.message || 'Sign in failed' } };
     }
@@ -87,7 +97,7 @@ export const signIn = {
 };
 
 export const signUp = {
-  email: async ({ email, password, name }: { email: string; password: string; name?: string }) => {
+  email: async ({ email, password, name, callbackURL = '/dashboard' }: { email: string; password: string; name?: string; callbackURL?: string }) => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
       const response = await fetch(`${apiUrl}/api/auth/sign-up/email`, {
@@ -104,14 +114,22 @@ export const signUp = {
       }
 
       const data = await response.json();
+      
+      if (!data.access_token) {
+        return { error: { message: 'Token not received from server' } };
+      }
+
       // Store token in localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('access_token', data.access_token);
+        
+        // Use window.location.href for immediate redirect
+        if (callbackURL) {
+          window.location.href = callbackURL;
+        }
       }
-     const token = localStorage.getItem('access_token');
-console.log('getSession - token exists?', !!token);
-if (token) console.log('Token first chars:', token.substring(0, 20));
-      return { user: { email, name } }; // Simplified response
+      
+      return { user: data.user || { email, name } }; 
     } catch (error: any) {
       return { error: { message: error.message || 'Registration failed' } };
     }
