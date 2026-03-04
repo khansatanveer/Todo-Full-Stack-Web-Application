@@ -21,7 +21,7 @@ export async function getSession() {
       },
       cache: 'no-store',
     });
-
+    console.log("API URL:", apiUrl)
     console.log('getSession - response status:', response.status);
     const text = await response.text();
     console.log('getSession - response text:', text.substring(0, 200));
