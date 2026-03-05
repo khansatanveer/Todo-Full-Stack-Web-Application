@@ -38,6 +38,12 @@ function LoginForm() {
     setError('');
     setLoading(true);
 
+    if (password.length > 72) {
+      setError('Password cannot be longer than 72 characters');
+      setLoading(false);
+      return;
+    }
+
     try {
       // Use our unified signIn function that handles token storage and redirection
       const result = await signIn.email({
@@ -95,6 +101,7 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              maxLength={72}
             />
           </div>
 
