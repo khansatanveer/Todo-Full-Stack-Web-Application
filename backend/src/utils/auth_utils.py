@@ -1,12 +1,30 @@
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    # bcrypt has a 72-byte limit. We truncate manually to avoid ValueError.
+    # Note: Modern bcrypt handles this but passlib doesn't and raises ValueError.
+    # We use utf-8 encoding and take the first 72 bytes.
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        # Slicing bytes and then decoding back to string safely
+        password_bytes = password_bytes[:72]
+    
+    # Generate salt and hash
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    # Truncate to 72 bytes to be safe and match hashing
+    password_bytes = plain_password.encode('utf-8')
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+    
+    # bcrypt.checkpw expects bytes for both arguments
+    try:
+        return bcrypt.checkpw(password_bytes, hashed_password.encode('utf-8'))
+    except Exception:
+        return False
 
 def check_cross_user_access_attempt(current_user: dict, target_user_id: str) -> bool:
     """

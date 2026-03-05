@@ -112,7 +112,7 @@ export const signUp = {
         const errorData = await response.json();
         return { error: { message: errorData.detail || 'Registration failed' } };
       }
-
+   console.log("API URL:", apiUrl)
       const data = await response.json();
       
       if (!data.access_token) {
